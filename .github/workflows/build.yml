@@ -27,7 +27,6 @@ jobs:
           name: hdf5-${{ env.HDF5_VERSION }}-${{ env.MANYLINUX_IMAGE }}
           path: |
             dist/*.tar.gz
-            dist/*.sha256
 
   publish:
     needs: build
@@ -47,4 +46,4 @@ jobs:
           gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
             --title "$TAG" \
             --notes "HDF5 $TAG built on $MANYLINUX_IMAGE"
-          gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber *.tar.gz *.sha256
+          gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber *.tar.gz

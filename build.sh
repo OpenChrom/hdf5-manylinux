@@ -86,4 +86,3 @@ cat "$OUT/BUILDINFO"
 
 mkdir -p "$DIST"
 tar czf "$DIST/hdf5-${HDF5_VERSION}-${PLATFORM}.tar.gz" --owner=0 --group=0 --numeric-owner -C "$WORK" "$(basename "$OUT")"
-(cd "$DIST" && sha256sum "hdf5-${HDF5_VERSION}-${PLATFORM}.tar.gz" | tee "hdf5-${HDF5_VERSION}-${PLATFORM}.tar.gz.sha256")
