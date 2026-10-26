@@ -1,0 +1,50 @@
+name: Build HDF5
+
+env:
+  HDF5_VERSION: 2.2.0
+  HDF5_SHA256: 1a1ab8209b35586fbc1aa279ba76d102130b95badcb20ca329587219112d8c16
+  HDF5_SOVERSION: 320
+  MANYLINUX_IMAGE: manylinux_2_28_x86_64
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux_2_28_x86_64
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        env:
+          DIST: ${{ github.workspace }}/dist
+        run: ./build.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: hdf5-${{ env.HDF5_VERSION }}-${{ env.MANYLINUX_IMAGE }}
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: hdf5-${{ env.HDF5_VERSION }}-${{ env.MANYLINUX_IMAGE }}
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ env.HDF5_VERSION }}
+        run: |
+          gh release delete "$TAG" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || true
+          gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes "HDF5 $TAG built on $MANYLINUX_IMAGE"
+          gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber *.tar.gz *.sha256
