@@ -1,0 +1,47 @@
+name: HDF5 manylinux
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux_2_28_x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        env:
+          HDF5_VERSION: 2.2.0
+          HDF5_SHA256: 1a1ab8209b35586fbc1aa279ba76d102130b95badcb20ca329587219112d8c16
+          HDF5_SOVERSION: 320
+          DIST: ${{ github.workspace }}/dist
+        run: ./build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hdf5-2.2.0-manylinux_2_28_x86_64
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: hdf5-2.2.0-manylinux_2_28_x86_64
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: 2.2.0
+        run: |
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "HDF5 2.2.0" \
+              --description "built on manylinux 2.28"
+          gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber *.tar.gz *.sha256
