@@ -4,16 +4,16 @@
 # inside a manylinux_2_28 container, so they run on glibc 2.28 and newer.
 # The HDF Group only publishes Linux binaries built on Ubuntu 24.04, which need glibc 2.38.
 #
-# Usage (from this directory):
+# Usage:
 #   docker run --rm -v "$PWD:/build:ro" -v "$PWD/dist:/dist" quay.io/pypa/manylinux_2_28_x86_64 /build/build.sh
-#
+# from this directory, use manylinux_2_28_aarch64 for ARM64
 set -euo pipefail
 
 HDF5_VERSION="${HDF5_VERSION:-2.2.0}"
 HDF5_SHA256="${HDF5_SHA256:-1a1ab8209b35586fbc1aa279ba76d102130b95badcb20ca329587219112d8c16}"
 HDF5_SOVERSION="${HDF5_SOVERSION:-320}"
 MAX_GLIBC="2.28"
-PLATFORM="manylinux_2_28_x86_64"
+PLATFORM="manylinux_2_28_$(uname -m)"
 DIST="${DIST:-/dist}"
 WORK="$(mktemp -d)"
 
