@@ -18,6 +18,7 @@ DIST="${DIST:-/dist}"
 WORK="$(mktemp -d)"
 
 dnf install -y -q java-21-openjdk-devel
+pipx install ninja
 export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"
 
 cd "$WORK"
@@ -26,42 +27,23 @@ echo "${HDF5_SHA256}  hdf5-${HDF5_VERSION}.tar.gz" | sha256sum -c -
 tar xzf "hdf5-${HDF5_VERSION}.tar.gz"
 SRC="$(find "$WORK" -mindepth 1 -maxdepth 1 -type d -name 'hdf5*' | head -n 1)"
 
-# Mirrors the compression settings of the ci-StdShar-GNUC preset used for the official release,
+# Uses the ci-StdShar-GNUC preset of the official release,
 # but only builds the shared C library and the JNI bindings.
-cmake -S "$SRC" -B build \
-	-DCMAKE_BUILD_TYPE=Release \
+cmake -S "$SRC" -B build --preset ci-StdShar-GNUC \
 	-DCMAKE_INSTALL_PREFIX="$WORK/install" \
 	-DCMAKE_INSTALL_LIBDIR=lib \
 	-DCMAKE_INSTALL_RPATH='$ORIGIN' \
-	-DBUILD_SHARED_LIBS=ON \
 	-DBUILD_STATIC_LIBS=OFF \
 	-DBUILD_TESTING=OFF \
 	-DHDF5_BUILD_EXAMPLES=OFF \
+	-DHDF5_PACK_EXAMPLES=OFF \
 	-DHDF5_BUILD_TOOLS=OFF \
 	-DHDF5_BUILD_UTILS=OFF \
 	-DHDF5_BUILD_HL_LIB=OFF \
 	-DHDF5_BUILD_CPP_LIB=OFF \
 	-DHDF5_BUILD_FORTRAN=OFF \
 	-DHDF5_BUILD_DOC=OFF \
-	-DHDF5_BUILD_JAVA=ON \
-	-DHDF5_ENABLE_JNI=ON \
-	-DHDF5_ALLOW_EXTERNAL_SUPPORT=TGZ \
-	-DTGZPATH="$WORK/tgz" \
-	-DHDF5_ENABLE_ZLIB_SUPPORT=ON \
-	-DHDF5_USE_ZLIB_NG=OFF \
-	-DHDF5_USE_ZLIB_STATIC=ON \
-	-DZLIB_USE_EXTERNAL=ON \
-	-DZLIB_USE_LOCALCONTENT=OFF \
-	-DZLIB_PACKAGE_NAME=zlib \
-	-DZLIB_TGZ_ORIGPATH=https://github.com/HDFGroup/zlib/archive/refs/tags \
-	-DZLIB_TGZ_NAME=v1.3.2-cmakefix.tar.gz \
-	-DHDF5_ENABLE_SZIP_SUPPORT=ON \
-	-DHDF5_USE_LIBAEC_STATIC=ON \
-	-DSZIP_USE_EXTERNAL=ON \
-	-DLIBAEC_USE_LOCALCONTENT=OFF \
-	-DLIBAEC_PACKAGE_NAME=libaec \
-	-DLIBAEC_TGZ_ORIGPATH=https://github.com/MathisRosenhauer/libaec/releases/download/v1.1.6 \
-	-DLIBAEC_TGZ_NAME=libaec-1.1.6.tar.gz
+	-DHDF5_ENABLE_PLUGIN_SUPPORT=OFF
 cmake --build build --parallel "$(nproc)"
 cmake --install build
 
